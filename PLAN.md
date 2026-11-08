@@ -44,6 +44,17 @@ and lets both projects ship independently.
    predictable, limited conflicts.
 5. Produce reproducible Windows and macOS builds with clear attribution.
 6. Default to local models and local tools; cloud providers are opt-in.
+7. Guarantee **user sovereignty**: every shipped capability is available to the
+   machine's owner, with no hidden gates, artificial quotas, or mandatory
+   approvals. Restrictions are opt-in policies the owner chooses.
+
+**Governing principle:** Zoveli Code is the user's personal possession. The
+owner decides what to run, which providers to use, which MCP servers to expose,
+which files to edit, and which commands to execute. The product must not stop,
+nanny, or silently downgrade a capability. Safety features exist to protect the
+owner's data from third parties and to make consequences visible — never to
+overrule the owner. Any restriction we ship must be transparent, configurable,
+and disabled by default unless the owner enables it.
 
 ### Non-goals (for the first release)
 
@@ -221,16 +232,23 @@ The first release must make verification visible without adding noise:
 The exact TUI treatment depends on the spike in 5.1. Desktop/web rendering can
 follow in a later phase.
 
-### 5.4 Local-first defaults
+### 5.4 Local-first defaults and owner authority
 
-- Default to Ollama (`qwen3:4b` or the model selected during install).
-- Cloud providers only when the user supplies a key.
-- Updates: `notify` by default; no automatic install without consent.
+- **Default permission mode: `owner`.** All tools are enabled, including shell,
+  file writes, network access, MCP servers, and subagents. There are no
+  mandatory approval prompts and no capability gates. The owner can opt into
+  `ask` or `deny` rules through configuration if they want restrictions.
+- Default to Ollama and a model detected during install. Cloud providers are
+  available whenever the owner configures a key; nothing is hidden or blocked.
+- Updates: `notify` by default; automatic installation is the owner's choice.
 - No telemetry. No analytics endpoints added by this fork.
-- MCP bridge binds to loopback. Remote MCP requires an explicit token and
-  non-default configuration.
-- Tool permissions: ask before shell commands and file writes outside the
-  workspace; reuse OpenCode's permission/policy system.
+- MCP bridge defaults to loopback for convenience. Remote/HTTP exposure is a
+  supported capability: the owner can bind it, configure tokens, and use it.
+  The existing Zoveli remote bridge keeps its own authentication rules; Zoveli
+  Code does not add a second gate on top.
+- Every restriction must be documented, visible in config, and reversible. The
+  product never silently reduces the tool list, model list, provider list, or
+  filesystem scope based on a policy the owner did not choose.
 
 ### 5.5 Branding and rename strategy
 
@@ -240,7 +258,7 @@ conflicts. Use a **two-tier rename**:
 **Tier 1 — user-facing, first release:**
 
 - Product name: `Zoveli Code`.
-- CLI binary: `zoveli-code`.
+- CLI binary: `zoveli.ky` (displayed as `Zoveli.ky` in docs and installers).
 - TUI title, help text, splash, update text, docs links.
 - Installer names, artifact names, release notes.
 - Global app root: `zoveli-code` in `packages/util/src/global.ts`, so Zoveli
@@ -342,7 +360,7 @@ Estimates are rough and assume one developer.
 
 **Deliverables**
 
-- `zoveli-code` binary and CLI help text.
+- `zoveli.ky` binary and CLI help text.
 - TUI title/splash/update strings.
 - Global app root `zoveli-code`; migration note for anyone with an existing
   OpenCode config.
@@ -352,7 +370,7 @@ Estimates are rough and assume one developer.
 
 **Acceptance**
 
-- `zoveli-code --help` and the TUI show Zoveli Code, not OpenCode.
+- `zoveli.ky --help` and the TUI show Zoveli Code, not OpenCode.
 - Config/data/log paths are under the new app root.
 - Upstream functionality is unchanged; baseline tests still pass.
 
@@ -372,15 +390,16 @@ Estimates are rough and assume one developer.
 - From Zoveli Code, `mathcore_compute` and at least one `math_*_solve` tool
   return verified results.
 - A wrong or missing tool name fails safely.
-- No vault or memory data leaves the machine.
+- The default local flow keeps vault and memory data on the machine; remote
+  exposure is an explicit owner-configurable option.
 
 ### Phase 4 — Trust UX and memory (4–6 days)
 
 **Deliverables**
 
 - Verification receipts in tool output or TUI metadata (depending on spike).
-- Memory and vault tools available through the same MCP bridge with explicit
-  permission prompts.
+- Memory and vault tools available through the same MCP bridge by default in
+  owner mode, with opt-in policy restrictions for owners who want them.
 - Audit view or command.
 - Offline-mode test: local model + math + memory with the network disabled.
 - Documentation for verified/partially verified/unverified states.
@@ -395,7 +414,7 @@ Estimates are rough and assume one developer.
 
 **Deliverables**
 
-- `bun run pack` artifacts and `zoveli-code` binaries for Windows and macOS.
+- `bun run pack` artifacts and `zoveli.ky` binaries for Windows and macOS.
 - Installer scripts aligned with Zoveli's sovereign-distribution approach.
 - SHA-256 checksums and build provenance.
 - CI: typecheck, lint, plugin tests, MCP integration test, Windows smoke test.
@@ -413,18 +432,25 @@ Estimates are rough and assume one developer.
 
 ---
 
-## 8. Security and privacy
+## 8. Security, privacy, and user sovereignty
 
-- **Loopback only by default.** The Zoveli MCP bridge rejects non-loopback URLs.
-- **Remote MCP is opt-in** and requires a token of at least 32 characters.
+Security features protect the owner's data and machine from third parties. They
+do not limit what the owner may do with their own software.
+
+- **Owner authority.** The default is full capability for the local user: all
+  tools, all providers, all MCP servers, shell access, filesystem access, and
+  network access. No mandatory approvals, no silent ceilings, no hidden feature
+  flags. Restriction policies are opt-in and reversible.
+- **Transparent defaults.** Loopback is the default bind for the local MCP
+  bridge because it is the convenient local path, not a prohibition. The owner
+  can bind remote, configure tokens, and expose the bridge; the existing Zoveli
+  remote bridge keeps its own documented authentication rules.
 - **No secrets in logs.** Reuse Zoveli's redaction rules; never print API keys,
   bearer tokens, vault contents, or prompts in diagnostics.
-- **Tool permissions.** Shell and write operations ask by default; deny rules
-  are honored before the MCP boundary.
 - **Math integrity.** Never rewrite a `mathcore` result. Verification metadata
   is additive.
-- **Data locality.** Memory/vault tools stay on the local bridge. Cloud models
-  receive only what the user sends in the conversation.
+- **Data locality.** Memory/vault tools stay on the local bridge by default.
+  Cloud models receive only what the owner sends in the conversation.
 - **Supply chain.** Pin dependencies, review upstream lockfile changes, and
   publish checksums for release artifacts.
 - **License hygiene.** Keep `LICENSE`, `NOTICE`, and upstream attribution in
@@ -477,35 +503,37 @@ bun run check
 | Two runtimes confuse users | Medium | High | One install path; health check; clear docs; optional auto-start later. |
 | TUI cannot render verification badges | Medium | Medium | Spike first; fall back to text receipts; desktop/web badge later. |
 | MCP bridge requires a running server | High | Medium | Detect and guide; add auto-start in a later phase. |
-| Shell/file tools weaken Zoveli's safety story | Medium | High | Ask-by-default permissions; deny rules; audit trail. |
+| Owner-mode tools create risk the owner did not intend | Medium | High | Full authority stays the default per the product principle; optional opt-in policies; clear audit trail; no hidden gates. |
 | License or trademark mistake | Low | High | Keep NOTICE and MIT text; do not use OpenCode marks as the product name; legal review before public release. |
 | Large initial push fails | Low | Medium | Push in stages or use a shallow snapshot if the network rejects it. |
 | Windows path/signing issues | Medium | Medium | Test early; follow Zoveli's unsigned-install guide; document SmartScreen. |
 
 ---
 
-## 11. Open decisions (need approval)
+## 11. Resolved decisions (2026-11-07)
 
-1. **Binary name:** `zoveli-code` (recommended) or `zoveli`?
-2. **Runtime dependency:** require an installed Zoveli AI server (recommended
-   for v0.1), or bundle the Zoveli runtime?
-3. **Internal names:** keep `@opencode/*` packages and `OPENCODE_*` env vars in
-   v0.1 (recommended), or rename everything immediately?
-4. **Default model:** `qwen3:4b` (Zoveli default), or detect the best local
-   model at install time?
-5. **First public release:** after Phase 3 (usable bridge) or after Phase 5
-   (packaged installers)?
+1. **Binary name:** `zoveli.ky` (displayed as `Zoveli.ky`).
+2. **Runtime dependency:** companion fork; v0.1 requires an installed/running
+   Zoveli AI server for math, memory, and vault tools.
+3. **Internal names:** keep `@opencode/*` packages and `OPENCODE_*` environment
+   variables in v0.1. Add `ZOVELI_CODE_*` aliases later.
+4. **Default model:** detect the best available local model at install time.
+5. **First public release:** after Phase 5 (packaged installers).
+6. **User sovereignty:** full owner authority by default. All capabilities are
+   available; restrictions are opt-in policies only. No hidden limits, no
+   mandatory approvals, no capability gates.
 
 ---
 
-## 12. Approval checklist
+## 12. Approval record
 
-- [ ] Architecture: companion fork over MCP (Option A) approved.
-- [ ] Repository `blessandy9104-hue/zoveli-code` approved as public.
-- [ ] Binary/product name approved.
-- [ ] First-release scope approved (Phase 3 vs Phase 5).
-- [ ] Open decisions in section 11 resolved.
-- [ ] Permission to import the OpenCode history and begin Phase 1.
+- [x] Architecture: companion fork over MCP (Option A) approved.
+- [x] Repository `blessandy9104-hue/zoveli-code` approved as public.
+- [x] Binary/product name approved: `zoveli.ky` / Zoveli Code.
+- [x] First-release scope approved: Phase 5.
+- [x] Decisions in section 11 resolved.
+- [x] Permission granted to import the OpenCode history and begin Phase 1.
+- [x] User-sovereignty principle adopted as a governing product rule.
 
-Once approved, implementation starts with the import and baseline build. No
-OpenCode source has been modified at the time of writing.
+Approved by Andy on 2026-11-07. Phase 1 begins with the source import and
+baseline build. No OpenCode source had been modified before this approval.
