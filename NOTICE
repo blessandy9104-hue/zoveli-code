@@ -1,0 +1,24 @@
+Zoveli Code
+===========
+
+This product includes software derived from OpenCode:
+
+  OpenCode
+  https://github.com/anomalyco/opencode
+  Copyright (c) 2025 opencode
+  Licensed under the MIT License.
+
+The upstream source snapshot used for this derivative is the `dev` branch at
+commit ece56ca58419083275f2a2a81ac28d05f4a1b89b (OpenCode 2.2.5).
+
+Zoveli-specific modifications, branding, and integration code are:
+
+  Copyright (c) 2026 Andy (blessandy9104-hue)
+  Licensed under the MIT License.
+
+The original MIT copyright notice is retained in the LICENSE file and must be
+retained in redistributed copies and substantial portions of the software.
+
+"OpenCode" is the name of the upstream project. "Zoveli" and "Zoveli Code" are
+names of this derivative project. This derivative is not affiliated with or
+endorsed by the OpenCode maintainers.
